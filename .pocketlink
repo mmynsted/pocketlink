@@ -1,0 +1,5 @@
+#root pocket directory
+pocket=~/pocket
+
+#location to be used for temporary space
+tmpPath=/tmp

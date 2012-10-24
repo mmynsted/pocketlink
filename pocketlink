@@ -5,6 +5,9 @@ source .pocketlink
 
 #echo pocket=${pocket}
 
+srcDir='/Users/mmynsted/pocket/pockettest'
+dstDir='/Users/mmynsted/pt'
+
 # getTempDir() get a temporary directoy so that git-export-all can have a 
 # place for the output tar file.  As of this time it can not 
 # write the tar to a pipe/stdout, and the file name is used 
@@ -24,14 +27,38 @@ function getTempDir()
 # Attempt to remove any symlinks pointing to a pocket directory
 function unwindSymlinks()
 {
+	#find all of the symlinks in destination directory
+ 	local links=(`find ${dstDir} -type l -print 2>/dev/null -maxdepth 1`)
+
+	#remove the symlinks that point to the source directory
+	for l in "${links[@]}"
+	do
+		local symlinkDest=`readlink $l`
+		echo srcDir=$srcDir l=$l symlinkDest=$symlinkDest
+		if [[ $symlinkDest =~ "$srcDir"/.* ]]; then
+			echo "OK"
+		else
+			echo "not OK"
+		fi
+	done
+
+	#find -L `pwd` -samefile /Users/mmynsted/pocket/pockettest/keys -print 2>/dev/null -maxdepth 1|grep -v '/Users/mmynsted/pocket/pockettest/keys'
+
 }
 
 #get conent for a pocketDirReadme file
 function getPocketDirReadme()
 {
+	echo;
 }
 
-
+#it is VERY important that the symbolic links have the full path
+function createSymbolicLinks()
+{
+	echo;
+}
 
 tempDir=$(getTempDir)
 rmdir ${tempDir}
+unwindSymlinks
+
