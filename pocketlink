@@ -8,6 +8,16 @@ source .pocketlink
 srcDir='/Users/mmynsted/pocket/pockettest'
 dstDir='/Users/mmynsted/pt'
 
+while getopts ":s:d:" Option
+do
+	case $Option in
+		s ) echo s=$OPTARG [OPTIND=${OPTIND}] "$Option" $OPTIND $OPTARG;;
+	       	#d ) echo d=;;
+	esac
+done 
+
+shift $(($OPTIND - 1))
+
 # getTempDir() get a temporary directoy so that git-export-all can have a 
 # place for the output tar file.  As of this time it can not 
 # write the tar to a pipe/stdout, and the file name is used 
@@ -30,20 +40,19 @@ function unwindSymlinks()
 	#find all of the symlinks in destination directory
  	local links=(`find ${dstDir} -type l -print 2>/dev/null -maxdepth 1`)
 
-	#remove the symlinks that point to the source directory
+	#remove the symlinks that point to the source directory ($srcDir) from the destination directory ($dstDir)
 	for l in "${links[@]}"
 	do
 		local symlinkDest=`readlink $l`
-		echo srcDir=$srcDir l=$l symlinkDest=$symlinkDest
+		#echo srcDir=$srcDir l=$l symlinkDest=$symlinkDest
 		if [[ $symlinkDest =~ "$srcDir"/.* ]]; then
-			echo "OK"
+			echo "Removing symlink '$l'."
+			#need to add error handling here
+			unlink $l
 		else
-			echo "not OK"
+			echo "Ignoring symlink '$l'."
 		fi
 	done
-
-	#find -L `pwd` -samefile /Users/mmynsted/pocket/pockettest/keys -print 2>/dev/null -maxdepth 1|grep -v '/Users/mmynsted/pocket/pockettest/keys'
-
 }
 
 #get conent for a pocketDirReadme file
