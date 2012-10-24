@@ -1,8 +1,37 @@
 #!/bin/sh
-tempTemplate=`basename $0`'_tmp.XXXXXXX'
-echo ${tempTemplate}
-tempdir=`mktemp -d -q ${tempTemplate}`
-if [ $? -ne 0 ]; then
-   echo "$0: Can't create temp file, exiting..."
-   exit 1
-fi     
+
+#source the config
+source .pocketlink
+
+#echo pocket=${pocket}
+
+# getTempDir() get a temporary directoy so that git-export-all can have a 
+# place for the output tar file.  As of this time it can not 
+# write the tar to a pipe/stdout, and the file name is used 
+# to determine some of the content of the tar.
+function getTempDir()
+{
+	local tempTemplate=${tmpPath}/`basename $0`'-XXXXXXX'
+	local tempDir=`mktemp -d -q ${tempTemplate}`
+	if [ $? -ne 0 ]; then
+		echo "$0: Can not create temporary directory; unable to continue. " >&2
+   		exit 1
+	fi
+	echo ${tempDir}
+}
+
+# unwindSymlinks() clean up the symlinks pointing to a pocket directory
+# Attempt to remove any symlinks pointing to a pocket directory
+function unwindSymlinks()
+{
+}
+
+#get conent for a pocketDirReadme file
+function getPocketDirReadme()
+{
+}
+
+
+
+tempDir=$(getTempDir)
+rmdir ${tempDir}
