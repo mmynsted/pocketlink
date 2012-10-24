@@ -1,0 +1,8 @@
+#!/bin/sh
+tempTemplate=`basename $0`'_tmp.XXXXXXX'
+echo ${tempTemplate}
+tempdir=`mktemp -d -q ${tempTemplate}`
+if [ $? -ne 0 ]; then
+   echo "$0: Can't create temp file, exiting..."
+   exit 1
+fi     
