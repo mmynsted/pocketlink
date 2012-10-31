@@ -7,16 +7,30 @@ source .pocketlink
 
 srcDir='/Users/mmynsted/pocket/pockettest'
 dstDir='/Users/mmynsted/pt'
+wrkDir=`pwd`
 
-while getopts ":s:d:" Option
-do
-	case $Option in
-		s ) echo s=$OPTARG [OPTIND=${OPTIND}] "$Option" $OPTIND $OPTARG;;
-	       	#d ) echo d=;;
-	esac
-done 
+#check source directory when setting
+function setSrcDir()
+{ 
+	if [[ $OPTARG =~ ^/ ]] ; then 
+		srcDir=$OPTARG 
+	else
+		echo "Source directory must be explicit, i.e. must start with '/'.  Can not continue"
+		exit 1
+	fi
+}
 
-shift $(($OPTIND - 1))
+#check dest directory when setting
+function setDstDir()
+{ 
+	if [[ $OPTARG =~ ^/ ]] ; then 
+		dstDir=$OPTARG 
+	else
+		echo "Destination directory must be explicit, i.e. must start with '/'.  Can not continue"
+		exit 1
+	fi
+}
+
 
 # getTempDir() get a temporary directoy so that git-export-all can have a 
 # place for the output tar file.  As of this time it can not 
@@ -28,7 +42,7 @@ function getTempDir()
 	local tempDir=`mktemp -d -q ${tempTemplate}`
 	if [ $? -ne 0 ]; then
 		echo "$0: Can not create temporary directory; unable to continue. " >&2
-   		exit 1
+		exit 1
 	fi
 	echo ${tempDir}
 }
@@ -38,7 +52,7 @@ function getTempDir()
 function unwindSymlinks()
 {
 	#find all of the symlinks in destination directory
- 	local links=(`find ${dstDir} -type l -print 2>/dev/null -maxdepth 1`)
+	local links=(`find ${dstDir} -type l -print 2>/dev/null -maxdepth 1`)
 
 	#remove the symlinks that point to the source directory ($srcDir) from the destination directory ($dstDir)
 	for l in "${links[@]}"
@@ -58,7 +72,10 @@ function unwindSymlinks()
 #get conent for a pocketDirReadme file
 function getPocketDirReadme()
 {
-	echo;
+cat<<EOF
+This directory contains files exported from a git repository here "${srcDir}".
+files are then symlinked to "${dstDir}".
+EOF
 }
 
 #it is VERY important that the symbolic links have the full path
@@ -67,7 +84,37 @@ function createSymbolicLinks()
 	echo;
 }
 
-tempDir=$(getTempDir)
-rmdir ${tempDir}
-unwindSymlinks
+
+
+#while getopts ":s:d:" Option
+#do
+#	case $Option in
+#		s ) setSrcDir $OPTARG;; 
+#		d ) setDstDir $OPTARG;;
+#	esac
+#done 
+#
+#shift $(($OPTIND - 1))
+
+echo $srcDir
+echo $dstDir
+echo $wrkDir
+getPocketDirReadme
+cat <<EOF
+You have selected to export from the currently active branch in the git repository located here '${wrkDir}'.
+The pocketlink directory for this export will be here '${srcDir}'.  Symlinks back to the files in '${srcDir}' 
+will be made here '${dstDir}'.
+
+EOF
+
+read -n1 -p "Are you sure that you would like to continue? [y/n] " wantContinue;
+echo
+case $wantContinue in  
+	y|Y) echo Yes ;; 
+	*) echo No;; 
+esac
+
+#tempDir=$(getTempDir)
+#rmdir ${tempDir}
+#unwindSymlinks
 
