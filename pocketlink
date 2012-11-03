@@ -1,9 +1,140 @@
 #!/bin/sh
 
+configFile="~/.pocketlink"
+pocketlinkSrcFlagFile='.pocketlink-src-dir-flag'
+
+#root pocket directory
+pocket=~/pocket
+
+#location to be used for temporary space
+tmpPath=/tmp
+
+function getHelp 
+{ 
+cat 1>&2 <<EOF                                                                                                                                                                                                                                                                  
+
+POCKETLINK Help
+
+Pocket link is used to export all of the files from an active branch of a git repository 
+to a source directory under the pocket tree.  The pocket tree is a directory tree that 
+contains a directory for each exported git repository and defaults to '~/pocket'.  
+
+The source directory is used as a source for pocketlink files.  
+
+The destination directory is a directory that will be populated 
+with symbolic links back to one or more pocketlink source directories, but 
+exactly one source directory for each git repository.  
+
+Example:
+
+git repository   source directory    destination directory     
+--------------   ----------------    ---------------------
+gitrepA          ~/pocket/gitrepA    ~/bin
+gitrepB          ~/pocket/gitrepB    ~/bin
+
+If gitrepA and gitrepB contain files with the same names and relative paths, then 
+trouble will result.
+
+To prevent a file from being exported to the source directory, create a .gitattributes file 
+using the 'exports-ignore' keyword.  
+
+Example .gitattributes:
+NoExportMe.txt   exports-ignore
+
+Execute pocketlink in the top of the git repository you wish to export.  Provide pocketlink with 
+the fully qualified destination directory as the '-d ' parameter.
+
+Example:
+
+\$pocketlink -d /user/myuser/bin
+
+Use at your own risk, and good luck.  :-)
+
+
+EOF
+}
+
+function err()
+{
+	echo "\nError: "${1} 1>&2;
+}
+
+
 #source the config
-source .pocketlink
+if [ -e $configFile ] 
+then
+	source $configFile 
+else
+	echo "$configFile not found, using defaults">&2
+fi
 
 #echo pocket=${pocket}
+
+wrkDir=`pwd`
+srcDir=${pocket}/${wrkDir##*/}
+#dstDir='/Users/mmynsted/pt'
+
+#check source directory when setting
+function prepSrcDir()
+{ 
+	if [[ ${1} =~ ^/ ]] 
+	then 
+		srcDir=${1}
+	else
+		err "Source directory, defined as \"$srcDir\" must be explicit, i.e. must start with '/'.  Can not continue"
+		exit 1
+	fi
+	if [ -d $srcDir ]
+	then
+		echo "Cleaning existing links"
+		unwindSymlinks
+
+		echo removing old source directory
+		if [ -e $srcDir/$pocketlinkSrcFlagFile ]
+		then
+      			if [[ "$srcDir" == `head -n 1 $srcDir/$pocketlinkSrcFlagFile` ]] 
+			then 
+				rm -rf "$srcDir"
+			else
+				err "The flag file, \"$pocketlinkSrcFlagFile\", was found in \"$srcDir\" but did not contain the expected content.  Pocketlink will exit."
+				exit 3
+			fi
+		else
+			err "The flag file, \"$pocketlinkSrcFlagFile\", was not found.  The source directory, \"$srcDir\", may be corrupt.  Pocketlink will exit."
+			exit 3
+		fi
+	else
+		if [ -e $srcDir ]
+		then
+			err "The source directory, \"$srcDir\", exists as a file or a symbolic link.  "\
+			"This was not created by pocketlink and is unexpected.  Pocketlink will terminate."
+			exit 1
+		else
+			mkdir -v $srcDir
+			echo $srcDir >$srcDir/$pocketlinkSrcFlagFile
+		fi
+	fi
+}
+
+#check dest directory when setting
+function isValidDstDir()
+{ 
+	if [[ $1 =~ ^/ ]] 
+	then 
+		dstDir=$1 
+	else
+		err "The directory defined as the destination directory, \"$dstDir\", must be explicit, i.e. must start with '/' and should be an actual directory rather than a symbolic link.  Can not continue."
+		getHelp
+		exit 1
+	fi
+	if [ ! -d $dstDir ]
+	then 
+		err "The destination directory, \"$dstDir\", is either not-found or is a symbolic link or is otherwise unsafe."
+		getHelp
+		exit 1
+	fi
+}
+
 
 # getTempDir() get a temporary directoy so that git-export-all can have a 
 # place for the output tar file.  As of this time it can not 
@@ -14,8 +145,8 @@ function getTempDir()
 	local tempTemplate=${tmpPath}/`basename $0`'-XXXXXXX'
 	local tempDir=`mktemp -d -q ${tempTemplate}`
 	if [ $? -ne 0 ]; then
-		echo "$0: Can not create temporary directory; unable to continue. " >&2
-   		exit 1
+		err "$0: Can not create temporary directory; unable to continue. " >&2
+		exit 1
 	fi
 	echo ${tempDir}
 }
@@ -24,14 +155,81 @@ function getTempDir()
 # Attempt to remove any symlinks pointing to a pocket directory
 function unwindSymlinks()
 {
+	#find all of the symlinks in destination directory
+	local links=(`find ${dstDir} -type l -print 2>/dev/null -maxdepth 1`)
+
+	#remove the symlinks that point to the source directory ($srcDir) from the destination directory ($dstDir)
+	for l in "${links[@]}"
+	do
+		local symlinkDest=`readlink $l`
+		#echo srcDir=$srcDir l=$l symlinkDest=$symlinkDest
+		if [[ $symlinkDest =~ "$srcDir"/.* ]]; then
+			echo "Removing symlink '$l'."
+			#need to add error handling here
+			unlink $l
+		else
+			echo "Ignoring symlink '$l'."
+		fi
+	done
 }
 
 #get conent for a pocketDirReadme file
 function getPocketDirReadme()
 {
+cat<<EOF
+This directory contains files exported from a git repository here "${srcDir}".
+files are then symlinked to "${dstDir}".
+EOF
 }
 
+#it is VERY important that the symbolic links have the full path
+function createSymbolicLinks()
+{
+	find $srcDir -mindepth 1 -maxdepth 1 -exec ln -sv '{}' $destDir \;	
+}
 
+function isReady()
+{
+cat <<EOF
+You have selected to export from the currently active branch in the git repository located here '${wrkDir}'.
+The pocketlink directory for this export will be here '${srcDir}'.  Symlinks back to the files in '${srcDir}' 
+will be made here '${dstDir}'.
+EOF
+	read -n1 -p "Are you sure that you would like to continue? [y/n] " wantContinue;
+	echo
+	case $wantContinue in  
+		y|Y) echo Yes ;; 
+		*) echo No; exit;; 
+	esac
+}
 
+while getopts ":s:d:" Option
+do
+	case $Option in
+#		s ) setSrcDir $OPTARG;; 
+		d ) dstDir=$OPTARG;;
+	esac
+done 
+
+shift $(($OPTIND - 1))
+
+isValidDstDir $dstDir 
+#getPocketDirReadme
+isReady
+
+#prepare the source directory for new files (remove old files and links)
+prepSrcDir $srcDir
+
+#get the temp directory
 tempDir=$(getTempDir)
+
+#export/archive the current branch of the git repository from the current working directory
+gArchive=$tempDir/${wrkDir##*/}.tar
+git-archive-all $gArchive 
+tar -C $srcDir -xvf $gArchive
+rm -v $gArchive
 rmdir ${tempDir}
+createSymbolicLinks
+
+echo Done
+
