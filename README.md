@@ -13,3 +13,5 @@ Add the following to your .gitattributes
 
 	.gitattributes exports-ignore
 
+## License: MIT
+
