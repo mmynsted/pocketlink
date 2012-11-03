@@ -73,7 +73,6 @@ fi
 
 wrkDir=`pwd`
 srcDir=${pocket}/${wrkDir##*/}
-#dstDir='/Users/mmynsted/pt'
 
 #check source directory when setting
 function prepSrcDir()
