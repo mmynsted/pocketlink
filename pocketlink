@@ -147,7 +147,7 @@ function isValidDstDir()
 }
 
 
-# getTempDir() get a temporary directoy so that git-export-all can have a 
+# getTempDir() get a temporary directoy so that git-archive-all can have a 
 # place for the output tar file.  As of this time it can not 
 # write the tar to a pipe/stdout, and the file name is used 
 # to determine some of the content of the tar.
