@@ -1,7 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
 configFile="~/.pocketlink"
 pocketlinkSrcFlagFile='.pocketlink-src-dir-flag'
+pocketlinkReadme='pocketlink-readme.txt'
 
 #root pocket directory
 pocket=~/pocket
@@ -92,11 +93,11 @@ function prepSrcDir()
 		echo removing old source directory
 		if [ -e $srcDir/$pocketlinkSrcFlagFile ]
 		then
-      			if [[ "$srcDir" == `head -n 1 $srcDir/$pocketlinkSrcFlagFile` ]] 
+			if [[ "$srcDir" == `head -n 1 ${srcDir}/${pocketlinkSrcFlagFile}` ]] 
 			then 
 				rm -rf "$srcDir"
 			else
-				err "The flag file, \"$pocketlinkSrcFlagFile\", was found in \"$srcDir\" but did not contain the expected content.  Pocketlink will exit."
+				err "The flag file, \"${srcDir}/${pocketlinkSrcFlagFile}\", was found in \"$srcDir\" but did not contain the expected content.  Pocketlink will exit."
 				exit 3
 			fi
 		else
@@ -109,11 +110,22 @@ function prepSrcDir()
 			err "The source directory, \"$srcDir\", exists as a file or a symbolic link.  "\
 			"This was not created by pocketlink and is unexpected.  Pocketlink will terminate."
 			exit 1
-		else
-			mkdir -v $srcDir
-			echo $srcDir >$srcDir/$pocketlinkSrcFlagFile
 		fi
 	fi
+
+	#Create a new srcDir
+	#add the flag and readme files
+	mkdir -v $srcDir
+
+	echo creating ${srcDir}/${pocketlinkSrcFlagFile}
+	echo $srcDir > ${srcDir}/${pocketlinkSrcFlagFile}
+
+	echo creating ${srcDir}/${pocketlinkReadme}
+	cat > ${srcDir}/${pocketlinkReadme}<<EOF
+`getPocketDirReadme`
+EOF
+
+
 }
 
 #check dest directory when setting
@@ -176,16 +188,21 @@ function unwindSymlinks()
 #get conent for a pocketDirReadme file
 function getPocketDirReadme()
 {
-cat<<EOF
-This directory contains files exported from a git repository here "${srcDir}".
-files are then symlinked to "${dstDir}".
+cat <<EOF
+This directory contains files exported from a git repository here '${wrkDir}'.
+Symlinks are created here, '${dstDir}', that point back to files here '${srcDir}'.
 EOF
 }
 
 #it is VERY important that the symbolic links have the full path
 function createSymbolicLinks()
 {
-	find $srcDir -mindepth 1 -maxdepth 1 -exec ln -sv '{}' $destDir \;	
+	#find from srcDir only first level entries, do not include the srcDir and exclude the flag file
+	# then create a symlink to each find, in the dstDir
+	find $srcDir -mindepth 1 -maxdepth 1 \
+	\( ! -regex '.*'${pocketlinkSrcFlagFile} \) \
+	\( ! -regex '.*'${pocketlinkReadme} \) \
+	-exec ln -sv '{}' $dstDir \;	
 }
 
 function isReady()
@@ -226,7 +243,7 @@ tempDir=$(getTempDir)
 #export/archive the current branch of the git repository from the current working directory
 gArchive=$tempDir/${wrkDir##*/}.tar
 git-archive-all $gArchive 
-tar -C $srcDir -xvf $gArchive
+tar -C $pocket -xvf $gArchive
 rm -v $gArchive
 rmdir ${tempDir}
 createSymbolicLinks
