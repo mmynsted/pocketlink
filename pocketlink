@@ -37,10 +37,10 @@ If gitrepA and gitrepB contain files with the same names and relative paths, the
 trouble will result.
 
 To prevent a file from being exported to the source directory, create a .gitattributes file 
-using the 'exports-ignore' keyword.  
+using the 'export-ignore' keyword.  
 
 Example .gitattributes:
-NoExportMe.txt   exports-ignore
+NoExportMe.txt   export-ignore
 
 Execute pocketlink in the top of the git repository you wish to export.  Provide pocketlink with 
 the fully qualified destination directory as the '-d ' parameter.

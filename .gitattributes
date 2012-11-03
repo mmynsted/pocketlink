@@ -1,5 +1,5 @@
-README.md	exports-ignore
-.gitattributes	exports-ignore
-pocketlink	exports-ignore
-.pocketlink	exports-ignore
-license.txt     exports-ignore
+README.md	export-ignore
+.gitattributes	export-ignore
+pocketlink	export-ignore
+.pocketlink	export-ignore
+license.txt     export-ignore
