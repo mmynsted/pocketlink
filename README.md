@@ -41,7 +41,7 @@ git repository   source              destination   deployment
 gitrepA          ~/pocket/gitrepA    ~/bin         ~/bin/coolScript
 gitrepB          ~/pocket/gitrepB    ~/bin         ~/bin/scriptB
 gitrepC          ~/pocket/gitrepC    ~/bin         ~/bin/coolScript
-gitrepD          ~/pocket/gitrepD    ~/bin         ~bin/scriptD
+gitrepD          ~/pocket/gitrepD    ~/bin         ~/bin/scriptD
 ```
                                                                                                                                                                                                                                                                              
 In the above example gitrepA and gitrepC have the same deployment file name 'coolScript' and are using the same destination directory.  This type of collision must be avoided.  Pocketlink will not prevent nor check for such a collision. It is up to you the user to prevent these collisions.  Just as one would need to prevent path collisions.                                                                                                                                                                                                          
