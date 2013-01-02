@@ -1,7 +1,7 @@
 pocketlink
 ==========
 
-Manage files/directories, controlled by git, by abscracting the project deliverables into pockets 
+Manage files/directories, controlled by git, by abstracting the project deliverables into pockets 
 
 ## Requires
 * unix like OS with bash shell
