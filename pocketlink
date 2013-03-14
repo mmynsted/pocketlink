@@ -1,11 +1,11 @@
 #!/bin/bash
 
-configFile="~/.pocketlink"
+configFile="${HOME}/.pocketlink"
 pocketlinkSrcFlagFile='.pocketlink-src-dir-flag'
 pocketlinkReadme='pocketlink-readme.txt'
 
 #root pocket directory
-pocket=~/pocket
+pocket=${HOME}/pocket
 
 #location to be used for temporary space
 tmpPath=/tmp
