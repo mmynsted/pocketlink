@@ -15,7 +15,7 @@ Execute pocketlink in the top of the git repository you wish to export.  Provide
 
 Example                                                                                                                                                                                                                                                                        
 ``` 
-$pocketlink -d /user/myuser/bin
+$pocketlink -d /usr/myuser/bin
 ```
                                                                                                                                                                                                                                                  
 ##Detail
